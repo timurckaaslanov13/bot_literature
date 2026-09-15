@@ -21,15 +21,17 @@ async def create_tables():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
                 author TEXT NOT NULL,
-                genre TEXT NOT NULL,
+                genre_id INTEGER,
                 description TEXT,
                 is_available INTEGER DEFAULT 1,
                 taken_by INTEGER,
                 owner_id INTEGER,
                 FOREIGN KEY (taken_by) REFERENCES users(id),
-                FOREIGN KEY (owner_id) REFERENCES users(id)
+                FOREIGN KEY (owner_id) REFERENCES users(id),
+                FOREIGN KEY (genre_id) REFERENCES genres(id)
             )
         """)
+    
 
         await db.execute("""
             CREATE TABLE IF NOT EXISTS reviews (
@@ -43,12 +45,14 @@ async def create_tables():
                 FOREIGN KEY (book_id) REFERENCES books(id)
             )
         """)
-        try:
-            await db.execute(
-        "ALTER TABLE books ADD COLUMN owner_id INTEGER"
-        )
-        except:
-            pass
+    
+        
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS genres (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL
+            )
+        """)
         await db.commit()
 
 async def add_book(title, author, genre, description=""):
@@ -73,87 +77,47 @@ async def add_book(title, author, genre, description=""):
         )
 
         await db.commit()
-async def add_test_books():
-    async with aiosqlite.connect(DB_NAME) as db:
 
-        cursor = await db.execute(
-            "SELECT COUNT(*) FROM books"
-        )
-
-        result = await cursor.fetchone()
-
-        if result[0] > 0:
-            return
-
-        books = [
-            (
-                "Ведьмак: Последнее желание",
-                "Анджей Сапковский",
-                "Фэнтези",
-                "Сборник рассказов о ведьмаке Геральте."
-            ),
-            (
-                "Дюна",
-                "Фрэнк Герберт",
-                "Фантастика",
-                "История планеты Арракис и Пола Атрейдеса."
-            ),
-            (
-                "Убийство в Восточном экспрессе",
-                "Агата Кристи",
-                "Детектив",
-                "Эркюль Пуаро расследует загадочное убийство."
-            ),
-            (
-                "1984",
-                "Джордж Оруэлл",
-                "Антиутопия",
-                "Роман о тоталитарном государстве."
-            ),
-            (
-                "Мастер и Маргарита",
-                "Михаил Булгаков",
-                "Классика",
-                "Один из самых известных романов Булгакова."
-            )
-        ]
-
-        await db.executemany(
-            """
-            INSERT INTO books (
-                title,
-                author,
-                genre,
-                description
-            )
-            VALUES (?, ?, ?, ?)
-            """,
-            books
-        )
-
-        await db.commit()
 async def get_genres():
     async with aiosqlite.connect(DB_NAME) as db:
-        cursor = await db.execute(
-            "SELECT DISTINCT genre FROM books ORDER BY genre"
-        )
 
-        genres = await cursor.fetchall()
-
-        return [genre[0] for genre in genres]
-
-async def get_books_by_genre(genre):
-    async with aiosqlite.connect(DB_NAME) as db:
         cursor = await db.execute(
             """
-            SELECT id, title, author, genre, description, is_available
-            FROM books
-            WHERE genre = ?
-            ORDER BY title
-            """,
-            (genre,)
+            SELECT id, name
+            FROM genres
+            ORDER BY name
+            """
         )
+
         return await cursor.fetchall()
+
+async def get_books_by_genre(genre_id):
+    async with aiosqlite.connect(DB_NAME) as db:
+
+        cursor = await db.execute(
+            """
+            SELECT
+                books.id,
+                books.title,
+                books.author,
+                genres.name,
+                books.description,
+                books.is_available
+
+            FROM books
+
+            JOIN genres
+                ON books.genre_id = genres.id
+
+            WHERE books.genre_id = ?
+
+            ORDER BY books.title
+            """,
+            (genre_id,)
+        )
+
+        return await cursor.fetchall()
+    
 async def add_user(telegram_id, username, first_name):
     async with aiosqlite.connect(DB_NAME) as db:
 
@@ -232,14 +196,21 @@ async def get_user_books(telegram_id):
     async with aiosqlite.connect(DB_NAME) as db:
         cursor = await db.execute(
             """
-            SELECT books.id,
-                   books.title,
-                   books.author,
-                   books.genre
+            SELECT
+                books.id,
+                books.title,
+                books.author,
+                genres.name
             FROM books
+
             JOIN users
                 ON books.taken_by = users.id
+
+            JOIN genres
+                ON books.genre_id = genres.id
+
             WHERE users.telegram_id = ?
+
             ORDER BY books.title
             """,
             (telegram_id,)
@@ -358,16 +329,23 @@ async def search_books(query):
 
         cursor = await db.execute(
             """
-            SELECT id,
-                   title,
-                   author,
-                   genre,
-                   description,
-                   is_available
+            SELECT
+                books.id,
+                books.title,
+                books.author,
+                genres.name,
+                books.description,
+                books.is_available
+
             FROM books
-            WHERE title LIKE ?
-               OR author LIKE ?
-            ORDER BY title
+
+            JOIN genres
+                ON books.genre_id = genres.id
+
+            WHERE books.title LIKE ?
+               OR books.author LIKE ?
+
+            ORDER BY books.title
             """,
             (
                 search_value,
@@ -379,7 +357,7 @@ async def search_books(query):
 async def add_book_by_user(
     title,
     author,
-    genre,
+    genre_id,
     description,
     owner_id
 ):
@@ -389,7 +367,7 @@ async def add_book_by_user(
             INSERT INTO books (
                 title,
                 author,
-                genre,
+                genre_id,
                 description,
                 is_available,
                 taken_by,
@@ -400,7 +378,7 @@ async def add_book_by_user(
             (
                 title,
                 author,
-                genre,
+                genre_id,
                 description,
                 1,
                 None,
@@ -409,3 +387,43 @@ async def add_book_by_user(
         )
 
         await db.commit()
+async def add_default_genres():
+    genres = [
+        "Фэнтези",
+        "Фантастика",
+        "Детектив",
+        "Роман",
+        "Классика",
+        "Ужасы",
+        "Психология",
+        "История"
+    ]
+
+    async with aiosqlite.connect(DB_NAME) as db:
+        for genre in genres:
+            await db.execute(
+                """
+                INSERT OR IGNORE INTO genres (name)
+                VALUES (?)
+                """,
+                (genre,)
+            )
+
+        await db.commit()
+async def get_genre_name(genre_id):
+    async with aiosqlite.connect(DB_NAME) as db:
+        cursor = await db.execute(
+            """
+            SELECT name
+            FROM genres
+            WHERE id = ?
+            """,
+            (genre_id,)
+        )
+
+        genre = await cursor.fetchone()
+
+        if genre is None:
+            return "Неизвестный жанр"
+
+        return genre[0]

@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-from database import create_tables, add_test_books, add_user
+from database import create_tables, add_user, add_default_genres
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
@@ -68,8 +68,8 @@ async def help_command(message: Message):
 async def main():
 
     await create_tables()
-
-    await add_test_books()
+    await add_default_genres()
+    
 
     print("База данных готова")
     print("Бот запущен")

@@ -25,44 +25,55 @@ async def catalog_button(message: Message):
 
 @router.callback_query(F.data.startswith("genre:"))
 async def genre_selected(callback: CallbackQuery):
-    genre = callback.data.split(":", 1)[1]
 
-    books = await get_books_by_genre(genre)
+    genre_id = int(
+        callback.data.split(":")[1]
+    )
+
+    books = await get_books_by_genre(
+        genre_id
+    )
 
     if not books:
         await callback.message.answer(
             "В этом жанре пока нет книг."
         )
+
         await callback.answer()
         return
 
-    await callback.message.answer(
-        f"📚 Книги жанра: {genre}"
-    )
-
     for book in books:
+
         book_id = book[0]
         title = book[1]
         author = book[2]
+        genre = book[3]
         description = book[4]
         is_available = book[5]
 
-        status = "✅ Доступна" if is_available else "❌ Сейчас на руках"
+        status = (
+            "✅ Доступна"
+            if is_available
+            else "❌ Сейчас на руках"
+        )
 
         text = (
             f"📖 {title}\n"
-            f"Автор: {author}\n\n"
+            f"Автор: {author}\n"
+            f"Жанр: {genre}\n\n"
             f"{description}\n\n"
             f"Статус: {status}"
         )
 
         await callback.message.answer(
-    text,
-    reply_markup=book_keyboard(
-        book_id,
-        is_available
-    )
-)
+            text,
+            reply_markup=book_keyboard(
+                book_id,
+                is_available
+            )
+        )
+
+    await callback.answer()
 @router.callback_query(F.data.startswith("take_book:"))
 async def take_book_handler(callback: CallbackQuery):
 

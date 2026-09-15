@@ -1,15 +1,18 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
+from database import get_genres
 
 def genres_keyboard(genres):
     buttons = []
 
     for genre in genres:
+        genre_id = genre[0]
+        genre_name = genre[1]
+
         buttons.append(
             [
                 InlineKeyboardButton(
-                    text=genre,
-                    callback_data=f"genre:{genre}"
+                    text=genre_name,
+                    callback_data=f"genre:{genre_id}"
                 )
             ]
         )
@@ -94,26 +97,18 @@ def rating_keyboard(book_id):
             ]
         ]
     )
-def add_book_genres_keyboard():
-    genres = [
-        "Фэнтези",
-        "Фантастика",
-        "Детектив",
-        "Роман",
-        "Классика",
-        "Ужасы",
-        "Психология",
-        "История"
-    ]
-
+def add_book_genres_keyboard(genres):
     buttons = []
 
     for genre in genres:
+        genre_id = genre[0]
+        genre_name = genre[1]
+
         buttons.append(
             [
                 InlineKeyboardButton(
-                    text=genre,
-                    callback_data=f"add_genre:{genre}"
+                    text=genre_name,
+                    callback_data=f"add_genre:{genre_id}"
                 )
             ]
         )

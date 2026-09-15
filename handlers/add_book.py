@@ -5,6 +5,12 @@ from aiogram.fsm.context import FSMContext
 
 from database import add_book_by_user, get_database_user_id
 from keyboards.books import add_book_genres_keyboard
+from database import (
+    add_book_by_user,
+    get_database_user_id,
+    get_genres
+)
+from database import get_genre_name
 
 
 router = Router()
@@ -52,13 +58,17 @@ async def add_book_author(
         author=message.text.strip()
     )
 
+    genres = await get_genres()
+
     await state.set_state(
-    AddBookState.genre
+        AddBookState.genre
     )
 
     await message.answer(
         "Выберите жанр книги:",
-    reply_markup=add_book_genres_keyboard()
+        reply_markup=add_book_genres_keyboard(
+            genres
+        )
     )
 @router.callback_query(
     AddBookState.genre,
@@ -68,10 +78,12 @@ async def add_book_genre(
     callback: CallbackQuery,
     state: FSMContext
 ):
-    genre = callback.data.split(":", 1)[1]
+    genre_id = int(
+        callback.data.split(":")[1]
+    )
 
     await state.update_data(
-        genre=genre
+        genre_id=genre_id
     )
 
     await state.set_state(
@@ -79,7 +91,7 @@ async def add_book_genre(
     )
 
     await callback.message.answer(
-        f"Жанр: {genre}\n\n"
+        f"Жанр выбран ✅\n\n"
         "Теперь введи краткое описание книги:"
     )
 
@@ -110,16 +122,19 @@ async def add_book_description(
     await add_book_by_user(
         title=data["title"],
         author=data["author"],
-        genre=data["genre"],
+        genre_id=data["genre_id"],
         description=data["description"],
         owner_id=owner_id
     )
-
+    genre_name = await get_genre_name(
+    data["genre_id"]
+)
     await message.answer(
         "✅ Книга добавлена в каталог!\n\n"
         f"📖 {data['title']}\n"
         f"Автор: {data['author']}\n"
-        f"Жанр: {data['genre']}"
+        f"Жанр: {genre_name}"
     )
 
     await state.clear()
+    
