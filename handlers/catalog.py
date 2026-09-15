@@ -1,25 +1,13 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
-from aiogram.filters import Command
 
-from database import get_genres, get_books_by_genre
-from keyboards.books import genres_keyboard
+from database import get_genres, get_books_by_genre, take_book
+from keyboards.books import genres_keyboard, book_keyboard
+
 
 
 router = Router()
 
-@router.message(Command("catalog"))
-async def catalog_command(message: Message):
-    genres = await get_genres()
-
-    if not genres:
-        await message.answer("В каталоге пока нет книг.")
-        return
-
-    await message.answer(
-        "Выберите жанр:",
-        reply_markup=genres_keyboard(genres)
-    )
 
 @router.message(F.text == "📚 Каталог книг")
 async def catalog_button(message: Message):
@@ -34,9 +22,9 @@ async def catalog_button(message: Message):
         reply_markup=genres_keyboard(genres)
     )
 
+
 @router.callback_query(F.data.startswith("genre:"))
 async def genre_selected(callback: CallbackQuery):
-
     genre = callback.data.split(":", 1)[1]
 
     books = await get_books_by_genre(genre)
@@ -45,7 +33,6 @@ async def genre_selected(callback: CallbackQuery):
         await callback.message.answer(
             "В этом жанре пока нет книг."
         )
-
         await callback.answer()
         return
 
@@ -60,10 +47,7 @@ async def genre_selected(callback: CallbackQuery):
         description = book[4]
         is_available = book[5]
 
-        if is_available:
-            status = "✅ Доступна"
-        else:
-            status = "❌ Сейчас на руках"
+        status = "✅ Доступна" if is_available else "❌ Сейчас на руках"
 
         text = (
             f"📖 {title}\n"
@@ -72,6 +56,45 @@ async def genre_selected(callback: CallbackQuery):
             f"Статус: {status}"
         )
 
-        await callback.message.answer(text)
+        await callback.message.answer(
+    text,
+    reply_markup=book_keyboard(
+        book_id,
+        is_available
+    )
+)
+@router.callback_query(F.data.startswith("take_book:"))
+async def take_book_handler(callback: CallbackQuery):
+
+    book_id = int(
+        callback.data.split(":")[1]
+    )
+
+    result = await take_book(
+        book_id=book_id,
+        telegram_id=callback.from_user.id
+    )
+
+    if result == "success":
+        await callback.message.answer(
+            "✅ Книга отмечена как взятая."
+        )
+
+    elif result == "already_taken":
+        await callback.message.answer(
+            "❌ Эту книгу уже забрали."
+        )
+
+    elif result == "user_not_found":
+        await callback.message.answer(
+            "Сначала отправь /start."
+        )
+
+    else:
+        await callback.message.answer(
+            "Книга не найдена."
+        )
+
+    await callback.answer()
 
     await callback.answer()

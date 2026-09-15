@@ -145,5 +145,79 @@ async def get_books_by_genre(genre):
             """,
             (genre,)
         )
-
         return await cursor.fetchall()
+async def add_user(telegram_id, username, first_name):
+    async with aiosqlite.connect(DB_NAME) as db:
+
+        await db.execute(
+            """
+            INSERT OR IGNORE INTO users (
+                telegram_id,
+                username,
+                first_name
+            )
+            VALUES (?, ?, ?)
+            """,
+            (
+                telegram_id,
+                username,
+                first_name
+            )
+        )
+
+        await db.commit()
+        
+async def take_book(book_id, telegram_id):
+    async with aiosqlite.connect(DB_NAME) as db:
+
+        cursor = await db.execute(
+            """
+            SELECT is_available
+            FROM books
+            WHERE id = ?
+            """,
+            (book_id,)
+        )
+
+        book = await cursor.fetchone()
+
+        if book is None:
+            return "not_found"
+
+        if book[0] == 0:
+            return "already_taken"
+
+        cursor = await db.execute(
+            """
+            SELECT id
+            FROM users
+            WHERE telegram_id = ?
+            """,
+            (telegram_id,)
+        )
+
+        user = await cursor.fetchone()
+
+        if user is None:
+            return "user_not_found"
+
+        user_id = user[0]
+
+        await db.execute(
+            """
+            UPDATE books
+            SET is_available = 0,
+                taken_by = ?
+            WHERE id = ?
+            """,
+            (
+                user_id,
+                book_id
+            )
+        )
+
+        await db.commit()
+
+        return "success"
+
+        
