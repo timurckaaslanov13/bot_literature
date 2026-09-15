@@ -124,3 +124,26 @@ async def add_test_books():
         )
 
         await db.commit()
+async def get_genres():
+    async with aiosqlite.connect(DB_NAME) as db:
+        cursor = await db.execute(
+            "SELECT DISTINCT genre FROM books ORDER BY genre"
+        )
+
+        genres = await cursor.fetchall()
+
+        return [genre[0] for genre in genres]
+
+async def get_books_by_genre(genre):
+    async with aiosqlite.connect(DB_NAME) as db:
+        cursor = await db.execute(
+            """
+            SELECT id, title, author, genre, description, is_available
+            FROM books
+            WHERE genre = ?
+            ORDER BY title
+            """,
+            (genre,)
+        )
+
+        return await cursor.fetchall()

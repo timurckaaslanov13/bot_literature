@@ -7,6 +7,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.filters import Command
 from aiogram.types import Message
 from dotenv import load_dotenv
+from handlers.catalog import router as catalog_router
 
 
 load_dotenv()
@@ -15,7 +16,7 @@ TOKEN = os.getenv("BOT_TOKEN")
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
-
+dp.include_router(catalog_router)
 
 @dp.message(Command("start"))
 async def start_command(message: Message):
