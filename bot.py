@@ -1,6 +1,7 @@
 import asyncio
 import os
 
+from database import create_tables, add_test_books
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram import Bot, Dispatcher
 from aiogram.filters import Command
@@ -59,6 +60,12 @@ async def echo_message(message: Message):
 
 
 async def main():
+
+    await create_tables()
+
+    await add_test_books()
+
+    print("База данных готова")
     print("Бот запущен")
 
     await dp.start_polling(bot)
