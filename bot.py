@@ -8,6 +8,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 from dotenv import load_dotenv
 from handlers.catalog import router as catalog_router
+from handlers.my_books import router as my_books_router
 
 
 load_dotenv()
@@ -17,6 +18,7 @@ TOKEN = os.getenv("BOT_TOKEN")
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 dp.include_router(catalog_router)
+dp.include_router(my_books_router)
 
 @dp.message(Command("start"))
 async def start_command(message: Message):
@@ -44,9 +46,7 @@ async def reviews(message: Message):
     await message.answer("Раздел отзывов скоро добавим.")
 
 
-@dp.message(F.text == "👤 Мои книги")
-async def my_books(message: Message):
-    await message.answer("Здесь будут книги, которые ты забрал.")
+
 
 
 @dp.message(F.text == "ℹ️ Помощь")

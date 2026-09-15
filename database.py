@@ -220,4 +220,21 @@ async def take_book(book_id, telegram_id):
 
         return "success"
 
-        
+async def get_user_books(telegram_id):
+    async with aiosqlite.connect(DB_NAME) as db:
+        cursor = await db.execute(
+            """
+            SELECT books.id,
+                   books.title,
+                   books.author,
+                   books.genre
+            FROM books
+            JOIN users
+                ON books.taken_by = users.id
+            WHERE users.telegram_id = ?
+            ORDER BY books.title
+            """,
+            (telegram_id,)
+        )
+
+        return await cursor.fetchall()      
