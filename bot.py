@@ -11,6 +11,7 @@ from handlers.catalog import router as catalog_router
 from handlers.my_books import router as my_books_router
 from handlers.reviews import router as reviews_router
 from handlers.search import router as search_router
+from handlers.add_book import router as add_book_router
 
 
 load_dotenv()
@@ -23,6 +24,7 @@ dp.include_router(catalog_router)
 dp.include_router(my_books_router)
 dp.include_router(reviews_router)
 dp.include_router(search_router)
+dp.include_router(add_book_router)
 
 @dp.message(Command("start"))
 async def start_command(message: Message):
@@ -38,11 +40,6 @@ async def start_command(message: Message):
         "Выбери действие:",
         reply_markup=main_keyboard
     )
-
-
-@dp.message(F.text == "🔎 Поиск книги")
-async def search_book(message: Message):
-    await message.answer("Поиск книг скоро добавим.")
 
 
 @dp.message(F.text == "⭐ Отзывы")
@@ -86,10 +83,11 @@ main_keyboard = ReplyKeyboardMarkup(
             KeyboardButton(text="🔎 Поиск книги")
         ],
         [
-            KeyboardButton(text="⭐ Отзывы"),
+            KeyboardButton(text="➕ Добавить книгу"),
             KeyboardButton(text="👤 Мои книги")
         ],
         [
+            KeyboardButton(text="⭐ Отзывы"),
             KeyboardButton(text="ℹ️ Помощь")
         ]
     ],

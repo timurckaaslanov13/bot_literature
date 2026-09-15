@@ -25,7 +25,9 @@ async def create_tables():
                 description TEXT,
                 is_available INTEGER DEFAULT 1,
                 taken_by INTEGER,
-                FOREIGN KEY (taken_by) REFERENCES users(id)
+                owner_id INTEGER,
+                FOREIGN KEY (taken_by) REFERENCES users(id),
+                FOREIGN KEY (owner_id) REFERENCES users(id)
             )
         """)
 
@@ -41,8 +43,14 @@ async def create_tables():
                 FOREIGN KEY (book_id) REFERENCES books(id)
             )
         """)
-
+        try:
+            await db.execute(
+        "ALTER TABLE books ADD COLUMN owner_id INTEGER"
+        )
+        except:
+            pass
         await db.commit()
+
 async def add_book(title, author, genre, description=""):
     async with aiosqlite.connect(DB_NAME) as db:
 
@@ -368,3 +376,36 @@ async def search_books(query):
         )
 
         return await cursor.fetchall()
+async def add_book_by_user(
+    title,
+    author,
+    genre,
+    description,
+    owner_id
+):
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute(
+            """
+            INSERT INTO books (
+                title,
+                author,
+                genre,
+                description,
+                is_available,
+                taken_by,
+                owner_id
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                title,
+                author,
+                genre,
+                description,
+                1,
+                None,
+                owner_id
+            )
+        )
+
+        await db.commit()

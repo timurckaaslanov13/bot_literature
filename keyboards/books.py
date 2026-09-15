@@ -94,3 +94,30 @@ def rating_keyboard(book_id):
             ]
         ]
     )
+def add_book_genres_keyboard():
+    genres = [
+        "Фэнтези",
+        "Фантастика",
+        "Детектив",
+        "Роман",
+        "Классика",
+        "Ужасы",
+        "Психология",
+        "История"
+    ]
+
+    buttons = []
+
+    for genre in genres:
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    text=genre,
+                    callback_data=f"add_genre:{genre}"
+                )
+            ]
+        )
+
+    return InlineKeyboardMarkup(
+        inline_keyboard=buttons
+    )
