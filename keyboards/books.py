@@ -53,3 +53,44 @@ def book_keyboard(book_id, is_available):
     return InlineKeyboardMarkup(
         inline_keyboard=buttons
     )
+    
+def my_book_keyboard(book_id):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="↩️ Вернуть книгу",
+                    callback_data=f"return_book:{book_id}"
+                )
+            ]
+        ]
+    )
+def rating_keyboard(book_id):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="1 ⭐",
+                    callback_data=f"rating:{book_id}:1"
+                ),
+                InlineKeyboardButton(
+                    text="2 ⭐",
+                    callback_data=f"rating:{book_id}:2"
+                ),
+                InlineKeyboardButton(
+                    text="3 ⭐",
+                    callback_data=f"rating:{book_id}:3"
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="4 ⭐",
+                    callback_data=f"rating:{book_id}:4"
+                ),
+                InlineKeyboardButton(
+                    text="5 ⭐",
+                    callback_data=f"rating:{book_id}:5"
+                ),
+            ]
+        ]
+    )

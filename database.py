@@ -237,4 +237,110 @@ async def get_user_books(telegram_id):
             (telegram_id,)
         )
 
-        return await cursor.fetchall()      
+        return await cursor.fetchall()
+async def return_book(book_id, telegram_id):
+    async with aiosqlite.connect(DB_NAME) as db:
+        cursor = await db.execute(
+            """
+            SELECT books.taken_by
+            FROM books
+            WHERE books.id = ?
+            """,
+            (book_id,)
+        )
+
+        book = await cursor.fetchone()
+
+        if book is None:
+            return "not_found"
+
+        cursor = await db.execute(
+            """
+            SELECT id
+            FROM users
+            WHERE telegram_id = ?
+            """,
+            (telegram_id,)
+        )
+
+        user = await cursor.fetchone()
+
+        if user is None:
+            return "user_not_found"
+
+        user_id = user[0]
+
+        if book[0] != user_id:
+            return "not_yours"
+
+        await db.execute(
+            """
+            UPDATE books
+            SET is_available = 1,
+                taken_by = NULL
+            WHERE id = ?
+            """,
+            (book_id,)
+        )
+
+        await db.commit()
+
+        return "success"  
+async def add_review(user_id, book_id, rating, text):
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute(
+            """
+            INSERT INTO reviews (
+                user_id,
+                book_id,
+                rating,
+                text
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                user_id,
+                book_id,
+                rating,
+                text
+            )
+        )
+
+        await db.commit()
+
+
+async def get_reviews(book_id):
+    async with aiosqlite.connect(DB_NAME) as db:
+        cursor = await db.execute(
+            """
+            SELECT users.first_name,
+                   reviews.rating,
+                   reviews.text,
+                   reviews.created_at
+            FROM reviews
+            JOIN users
+                ON reviews.user_id = users.id
+            WHERE reviews.book_id = ?
+            ORDER BY reviews.created_at DESC
+            """,
+            (book_id,)
+        )
+
+        return await cursor.fetchall()
+async def get_database_user_id(telegram_id):
+    async with aiosqlite.connect(DB_NAME) as db:
+        cursor = await db.execute(
+            """
+            SELECT id
+            FROM users
+            WHERE telegram_id = ?
+            """,
+            (telegram_id,)
+        )
+
+        user = await cursor.fetchone()
+
+        if user is None:
+            return None
+
+        return user[0]
