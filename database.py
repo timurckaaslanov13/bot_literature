@@ -344,3 +344,27 @@ async def get_database_user_id(telegram_id):
             return None
 
         return user[0]
+async def search_books(query):
+    async with aiosqlite.connect(DB_NAME) as db:
+        search_value = f"%{query}%"
+
+        cursor = await db.execute(
+            """
+            SELECT id,
+                   title,
+                   author,
+                   genre,
+                   description,
+                   is_available
+            FROM books
+            WHERE title LIKE ?
+               OR author LIKE ?
+            ORDER BY title
+            """,
+            (
+                search_value,
+                search_value
+            )
+        )
+
+        return await cursor.fetchall()

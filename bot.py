@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from handlers.catalog import router as catalog_router
 from handlers.my_books import router as my_books_router
 from handlers.reviews import router as reviews_router
+from handlers.search import router as search_router
 
 
 load_dotenv()
@@ -21,6 +22,7 @@ dp = Dispatcher()
 dp.include_router(catalog_router)
 dp.include_router(my_books_router)
 dp.include_router(reviews_router)
+dp.include_router(search_router)
 
 @dp.message(Command("start"))
 async def start_command(message: Message):
